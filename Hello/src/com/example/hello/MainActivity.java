@@ -17,8 +17,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 
-public class MainActivity extends Activity {
-
+public class MainActivity extends Activity implements OnClickListener{
+	Button buttonStart, buttonStop; 
 	BroadcastReceiver myConnectionReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -84,24 +84,12 @@ public class MainActivity extends Activity {
 
 		
 		//开启
-		Button btn = (Button) this.findViewById(R.id.button1);
-		btn.setOnClickListener(new OnClickListener(){
+		buttonStart = (Button) findViewById(R.id.buttonstart);  
+        buttonStop = (Button) findViewById(R.id.buttonstop);  
+  
+        buttonStart.setOnClickListener(this);  
+        buttonStop.setOnClickListener(this); 
 
-			@Override
-			public void onClick(View v) {
-				// TODO Auto-generated method stub
-				AlertDialog.Builder builder = new Builder(MainActivity.this);
-				builder.setMessage("Hello!").show();
-				
-				// 判断网络是否可用  
-		        if(isOpenNetwork() == true) { 
-		        	//开始计时
-		        }else{
-		        	//
-		        }
-			}
-			
-		});
 	}
 	//取消注册Receiver
 	@Override
@@ -128,6 +116,22 @@ public class MainActivity extends Activity {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
+	}
+	@Override
+	public void onClick(View src) {
+		// TODO Auto-generated method stub
+		AlertDialog.Builder builder = new Builder(MainActivity.this);
+		
+		switch (src.getId()) {
+		case R.id.buttonstart:
+			builder.setMessage("onClick: starting service").show();
+			startService(new Intent(this, MyService.class));
+			break;
+		case R.id.buttonstop:
+			builder.setMessage("onClick: stop service").show();
+			stopService(new Intent(this, MyService.class));
+			break;
+		}
 	}
 	
 
