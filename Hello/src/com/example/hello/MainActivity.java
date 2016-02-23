@@ -1,8 +1,8 @@
 package com.example.hello;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
+import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -11,6 +11,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.Toast;
 
 public class MainActivity extends Activity implements OnClickListener{
 	Button buttonStart, buttonStop; 	 
@@ -50,12 +51,10 @@ public class MainActivity extends Activity implements OnClickListener{
 	@Override
 	public void onClick(View src) {
 		// TODO Auto-generated method stub
-		AlertDialog.Builder builder = new Builder(MainActivity.this);
-		
+				
 		switch (src.getId()) {
 		case R.id.buttonstart:
-			builder.setMessage("onClick: starting service").show();			
-			
+						
 			Intent intent = new Intent(this, MyService.class);
 		    Bundle bundle = new Bundle();
 		    bundle.putInt("MESSAGE_TYPE", MyService.MSG_HELLO);
@@ -66,7 +65,7 @@ public class MainActivity extends Activity implements OnClickListener{
 		    
 			break;
 		case R.id.buttonstop:
-			builder.setMessage("onClick: stop service").show();
+			
 			stopService(new Intent(this, MyService.class));
 			if (isServiceStarted) {
 				Intent intent1 = new Intent(this, MyService.class);
@@ -77,9 +76,19 @@ public class MainActivity extends Activity implements OnClickListener{
 				isServiceStarted = false;
 			}
 			break;
+			
+			
 		}
 	}
-	
+	private boolean isServiceRunning(String serviceName) {//"com.example.MyService"
+	    ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+	        if (serviceName.equals(service.service.getClassName())) {
+	            return true;
+	        }
+	    }
+	    return false;
+	}
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -95,6 +104,14 @@ public class MainActivity extends Activity implements OnClickListener{
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
+			Toast.makeText(getApplicationContext(), "目前没有什么可以设置的。", Toast.LENGTH_SHORT).show();
+			return true;
+		}
+		if (id == R.id.chkmyservice) {
+			String s = "";
+			if(isServiceRunning("com.example.hello.MyService"))s="后台服务正在运行......";
+			else s="后台服务已经停止!!!";
+			Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
 			return true;
 		}
 		return super.onOptionsItemSelected(item);

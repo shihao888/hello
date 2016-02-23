@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -65,15 +66,20 @@ public class MyService extends Service {
 			String action = intent.getAction();  
             if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION))  
             {  
-                //Timer timer = new Timer();  
-                //timer.schedule(new MyTimerTask(getApplicationContext(),connectState), new Date());
-            	Toast.makeText(getApplicationContext(), "Hello, ConnectivityManager.CONNECTIVITY_ACTION! Greeting from Android Service.", Toast.LENGTH_SHORT).show();
-           
+				ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+				if(connectivityManager!=null){					
+				NetworkInfo netInfo = connectivityManager.getActiveNetworkInfo();
+					if(netInfo!=null)						
+						Toast.makeText(getApplicationContext(), netInfo.getTypeName() + " " + netInfo.isAvailable(),Toast.LENGTH_SHORT).show();
+					else
+						Toast.makeText(getApplicationContext(), "getActiveNetworkInfo() is null!" ,Toast.LENGTH_SHORT).show();
+				}else
+					Toast.makeText(getApplicationContext(), "connectivityManager is null!" ,Toast.LENGTH_SHORT).show();
             }  
 		}  
     }; 
     
-   
+    
 	@Override
 	public void onCreate() {
 		// 注册广播  
