@@ -19,49 +19,11 @@ import android.widget.Button;
 
 public class MainActivity extends Activity implements OnClickListener{
 	Button buttonStart, buttonStop; 
-	BroadcastReceiver myConnectionReceiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			// TODO Auto-generated method stub
-			ConnectivityManager connectMgr = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-			NetworkInfo mobNetInfo = connectMgr.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-			NetworkInfo wifiNetInfo = connectMgr.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-			if (!mobNetInfo.isConnected() && !wifiNetInfo.isConnected()) {
-				// network unconnected 
-			} else {
-				// network connected 
-			}
-		}
-	};
-
-	/** 
-	 * 对网络连接状态进行判断 
-	 * @return  true, 可用； false， 不可用 
-	 */  
-	private boolean isOpenNetwork() {  
-	    ConnectivityManager connManager = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);  
-	    if(connManager.getActiveNetworkInfo() != null) {  
-	        return connManager.getActiveNetworkInfo().isAvailable();  
-	    }  
-	  
-	    return false;  
-	}  
-	/** 
-	 * 对网络连接类型进行判断 
-	 * @return  true, 可用； false， 不可用 
-	 */  
-	public static int getConnectedType(Context context) {
-		if (context != null) {
-			ConnectivityManager mConnectivityManager = (ConnectivityManager) context
-					.getSystemService(Context.CONNECTIVITY_SERVICE);
-			NetworkInfo mNetworkInfo = mConnectivityManager.getActiveNetworkInfo();
-			if (mNetworkInfo != null && mNetworkInfo.isAvailable()) {
-				return mNetworkInfo.getType();
-			}
-		}
-		return -1;
-	}
-
+	MyService receiveMsgService;  
+     
+    // 记录当前连接状态，因为广播会接收所有的网络状态改变wifi/3g等等，所以需要一个标志记录当前状态 
+	private boolean conncetState = true;
+	
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		// TODO Auto-generated method stub
@@ -78,9 +40,8 @@ public class MainActivity extends Activity implements OnClickListener{
 		setContentView(R.layout.activity_main);
 		
 		//设置监听
-		IntentFilter intentFilter = new IntentFilter();
-		intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
-		registerReceiver(myConnectionReceiver, intentFilter);
+		Intent intent = new Intent(MainActivity.this, MyService.class);
+		bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);  
 
 		
 		//开启
@@ -95,10 +56,11 @@ public class MainActivity extends Activity implements OnClickListener{
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		if (myConnectionReceiver != null) {
-			unregisterReceiver(myConnectionReceiver);
+		if (receiveMsgService != null) {
+			unbindService(serviceConnection);
+			Log.i("mylog", "执行unbind()");
 		}
-}
+	}
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
