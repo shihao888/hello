@@ -2,18 +2,16 @@ package com.example.hello;
 
 import java.util.TimerTask;
 
-import com.example.hello.MyService.ConnectState;
-
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.content.Context;
 
 public class MyTimerTask extends TimerTask {
 	private Context context;
-	ConnectState connectState;
-	public MyTimerTask(Context applicationContext,ConnectState connectState) {
+	
+	public MyTimerTask(Context applicationContext) {
 		this.context = applicationContext;
-		this.connectState = connectState;
+		
 	}
 
 	@Override
@@ -27,9 +25,9 @@ public class MyTimerTask extends TimerTask {
         {  
             isContected = false;  
         }  
-        if (connectState != null)  
+         
         {  
-            connectState.GetState(isContected); // 通知网络状态改变  
+            
             AlertDialog.Builder builder = new Builder(context);
             builder.setMessage("通知网络状态改变:" + isContected).show();
         }  
