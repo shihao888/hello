@@ -1,9 +1,14 @@
 package com.example.hello;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -40,13 +45,7 @@ public class MainActivity extends Activity implements OnClickListener{
         buttonStop.setOnClickListener(this); 
 
 	}
-	/*
-	 * 服务不能自己运行，需要通过调用Context.startService()或Context.bindService()方法启动服务。
-	 * 这两个方法都可以启动Service，但是它们的使用场合有所不同。使用startService()方法启用服务，
-	 * 调用者与服务之间没有关连，即使调用者退出了，服务仍然运行。
-	 * 使用bindService()方法启用服务，调用者与服务绑定在了一起，调用者一旦退出，服务也就终止，
-	 * 大有“不求同时生，必须同时死”的特点。
-	 */
+	
 	boolean isServiceStarted = false;
 	@Override
 	public void onClick(View src) {
@@ -54,26 +53,26 @@ public class MainActivity extends Activity implements OnClickListener{
 				
 		switch (src.getId()) {
 		case R.id.buttonstart:
-						
-			Intent intent = new Intent(this, MyService.class);
-		    Bundle bundle = new Bundle();
-		    bundle.putInt("MESSAGE_TYPE", MyService.MSG_HELLO);
-		    intent.putExtras(bundle);
-		    
-		    if (startService(intent) == null) return;
-		    isServiceStarted = true;
-		    
+			if (!isServiceStarted) {			
+				Intent intent = new Intent(this, MyService.class);		     
+			    if (startService(intent) == null) {
+			    	Toast.makeText(getApplicationContext(), "无法启动！" ,Toast.LENGTH_SHORT).show();
+			    	return;
+			    }
+			    isServiceStarted = true;
+			}else{
+				Toast.makeText(getApplicationContext(), "服务已启动！" ,Toast.LENGTH_SHORT).show();
+				return;
+			}
 			break;
 		case R.id.buttonstop:
 			
-			stopService(new Intent(this, MyService.class));
-			if (isServiceStarted) {
-				Intent intent1 = new Intent(this, MyService.class);
-				Bundle bundle1 = new Bundle();
-				bundle1.putInt("MESSAGE_TYPE", MyService.MSG_STOP_SERVICE);
-				intent1.putExtras(bundle1);
-				startService(intent1);
+			if (isServiceStarted) {		
+				stopService(new Intent(this, MyService.class));
 				isServiceStarted = false;
+			}else{
+				Toast.makeText(getApplicationContext(), "服务已停止！" ,Toast.LENGTH_SHORT).show();
+				return;
 			}
 			break;
 			
@@ -104,7 +103,7 @@ public class MainActivity extends Activity implements OnClickListener{
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
-			Toast.makeText(getApplicationContext(), "目前没有什么可以设置的。", Toast.LENGTH_SHORT).show();
+			Toast.makeText(getApplicationContext(), "版本version 5", Toast.LENGTH_SHORT).show();
 			return true;
 		}
 		if (id == R.id.chkmyservice) {
@@ -112,8 +111,39 @@ public class MainActivity extends Activity implements OnClickListener{
 			if(isServiceRunning("com.example.hello.MyService"))s="后台服务正在运行......";
 			else s="后台服务已经停止!!!";
 			Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
+			Long total = readTime("totaltime");
+			Long start = readTime("starttime");
+			Long stop = readTime("stoptime");
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy年-MM月dd日-HH时mm分ss秒");
+			Date date1 = new Date(total);Date date2 = new Date(start);Date date3 = new Date(stop);
+			String sTotal = formatter.format(date1);
+			String sStart = formatter.format(date2);
+			String sStop= formatter.format(date3);
+			s="total="+sTotal+" starttime="+sStart+" stoptime="+sStop;
+			AlertDialog.Builder builder=new AlertDialog.Builder(this);  //先得到构造器 
+			builder.setMessage(s);
+			builder.create().show(); 
+			
 			return true;
 		}
+		if (id == R.id.cleartotal) {
+			writeTime(0,"totaltime");
+		}
 		return super.onOptionsItemSelected(item);
+	}
+	public long readTime(String sName){
+		
+		SharedPreferences item = getSharedPreferences(sName,0);
+		String tmp = item.getString(sName,"0");
+		if(tmp==null)return 0l;
+		else return Long.parseLong(tmp);
+	}
+	public void writeTime(long time,String sName){
+		
+		SharedPreferences item = getSharedPreferences(sName,0);
+		SharedPreferences.Editor editor = item.edit();
+		editor.putString(sName,Long.toString(time));
+		editor.commit();
+		
 	}
 }
