@@ -1,6 +1,8 @@
 package com.example.hello;
 
 
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -19,6 +21,40 @@ import android.telephony.TelephonyManager;
 import android.widget.Toast;
 
 public class MyService extends Service {
+	
+	private ServiceHandler handler;
+	private ConnectivityManager connectivityManager;  
+    private NetworkInfo info; 
+    
+ // Message types to the service to display a message
+ 	static final int MSG_STOP_SERVICE = 0;
+ 	static final int MSG_HELLO = 1;
+ 	static final int MSG_HAPPY_BIRTHDAY = 2;  
+ // Handler that receives messages from the thread
+ 	private final class ServiceHandler extends Handler {
+ 	    
+ 	    public ServiceHandler(Looper looper) {
+ 	        super(looper);
+ 	    }
+ 	    
+ 	    @Override
+ 	    public void handleMessage(Message msg) {
+ 	        switch (msg.what) {
+ 	            case MSG_STOP_SERVICE:
+ 	                Toast.makeText(getApplicationContext(), "Service is shutting down...", Toast.LENGTH_SHORT).show();
+ 	                stopSelf(msg.arg1);
+ 	                break;
+ 	            case MSG_HELLO:
+ 	                Toast.makeText(getApplicationContext(), "Hello, Code Project! Greeting from Android Service.", Toast.LENGTH_SHORT).show();
+ 	                break;
+ 	            case MSG_HAPPY_BIRTHDAY:
+ 	                Toast.makeText(getApplicationContext(), "Happy Birthday to you!", Toast.LENGTH_SHORT).show();
+ 	                break;
+ 	            default:
+ 	                super.handleMessage(msg);
+ 	        }
+ 	    }
+ 	}
 	
 	@Override
 	public IBinder onBind(Intent arg0) {
@@ -64,39 +100,55 @@ public class MyService extends Service {
 			String action = intent.getAction();  
             if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION))  
             {  
-				ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-				if(connectivityManager!=null){					
-				NetworkInfo netInfo = connectivityManager.getActiveNetworkInfo();
-					if(netInfo!=null){						
+				connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+				info = connectivityManager.getActiveNetworkInfo(); 
+				
+					if(info != null && info.isAvailable() && (info.getState() == NetworkInfo.State.CONNECTED)){						
 						//开始计时
 						Long l = System.currentTimeMillis();
 						writeTime(l,"starttime");
-						Toast.makeText(getApplicationContext(), netInfo.getTypeName() + " " + netInfo.isAvailable(),Toast.LENGTH_SHORT).show();
+						Toast.makeText(getApplicationContext(), info.getTypeName(),Toast.LENGTH_SHORT).show(); 
 					}
-					else{//getActiveNetworkInfo() is null!
-						Toast.makeText(getApplicationContext(), "没有网络！" ,Toast.LENGTH_SHORT).show();
+					else{
+						Toast.makeText(getApplicationContext(), "没有可用网络",Toast.LENGTH_SHORT).show();
 						//停止计时
 						long stoptime = System.currentTimeMillis();						
 						long totaltime = readTime("totaltime")+stoptime-readTime("starttime"); 
 						writeTime(totaltime,"totaltime"); //记录总时间
-						writeTime(stoptime,"starttime");//记录结束时间到开始位置
-						
-						Toast.makeText(getApplicationContext(), "上网时长"+formatDuring(totaltime),Toast.LENGTH_SHORT).show();
+						writeTime(stoptime,"starttime");//记录结束时间到开始位置						
 					}
-				}else
-					Toast.makeText(getApplicationContext(), "connectivityManager is null!" ,Toast.LENGTH_SHORT).show();
+				
             }  
 		}  
     }; 
     
-    
+    private void improvePriority() {  
+	    PendingIntent contentIntent = PendingIntent.getActivity(this, 0,  
+	            new Intent(this, MyService.class), 0);  
+	    Notification notification = new Notification.Builder(this)  
+	            .setContentTitle("Foreground Service")  
+	            .setContentText("Foreground Service Started.")  
+	            .setSmallIcon(R.drawable.ic_launcher).build();  
+	    notification.contentIntent = contentIntent;  
+	    startForeground(1, notification);  //0 将不会显示 notification
+	} 
 	@Override
 	public void onCreate() {
-		Toast.makeText(getApplicationContext(), "Service is starting...", Toast.LENGTH_SHORT).show();
+		improvePriority();
+		
 		//注册广播  
         IntentFilter mFilter = new IntentFilter();  
         mFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION); // 添加接收网络连接状态改变的Action  
-        registerReceiver(mReceiver, mFilter);         
+        registerReceiver(mReceiver, mFilter); 
+        
+        Toast.makeText(getApplicationContext(), "Service is starting...", Toast.LENGTH_SHORT).show();
+
+        HandlerThread thread = new HandlerThread("StartedService", Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+        
+        // Get the HandlerThread's Looper and use it for our Handler
+        Looper looper = thread.getLooper();
+        handler = new ServiceHandler(looper);
 	}
 	@Override
 	public void onDestroy() {
@@ -104,10 +156,17 @@ public class MyService extends Service {
 		Toast.makeText(getApplicationContext(), "Service is shutting down...", Toast.LENGTH_SHORT).show();
 		super.onDestroy();
 		unregisterReceiver(mReceiver); // 删除广播
+		
+		stopForeground(true); 
 	}
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		
+		Message msg = handler.obtainMessage();
+	    msg.arg1 = startId;
+	    msg.what = intent.getExtras().getInt("MESSAGE_TYPE");
+
+	    handler.sendMessage(msg);
+
 	    // Restart the service if it got killed
 	    return START_REDELIVER_INTENT;
 	}
