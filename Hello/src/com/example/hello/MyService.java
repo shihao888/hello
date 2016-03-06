@@ -52,14 +52,7 @@ public class MyService extends Service {
 		TelephonyManager tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE); 
 		return tm.getDeviceId();		
 	}
-	public static String formatDuring(long mss) {  
-	    long days = mss / (1000 * 60 * 60 * 24);  
-	    long hours = (mss % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);  
-	    long minutes = (mss % (1000 * 60 * 60)) / (1000 * 60);  
-	    long seconds = (mss % (1000 * 60)) / 1000;  
-	    return days + " days " + hours + " hours " + minutes + " minutes "  
-	            + seconds + " seconds ";  
-	}  
+	 
 	//
 	private BroadcastReceiver mReceiver = new BroadcastReceiver()  
     {  
