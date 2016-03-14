@@ -109,7 +109,7 @@ public class MyService extends Service {
 						writeTime(totaltime,"totaltime"); //记录总时间
 						writeTime(stoptime,"starttime");//记录结束时间到开始位置						
 					}
-					connectNodejsServer();
+					
             }  
 		}
 
