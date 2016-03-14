@@ -1,6 +1,15 @@
 package com.example.hello;
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
+
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -47,10 +56,21 @@ public class MyService extends Service {
 		if(tmp==null)return 0l;
 		else return Long.parseLong(tmp);
 	}
+	//读参数：读取姓名、学号等信息
+	public String readParam(String sName){
+		
+		SharedPreferences item = getSharedPreferences(sName,0);
+		String tmp = item.getString(sName,"N/A");
+		if(tmp==null)return "N/A";
+		else return tmp;
+	}
 	//得到手机唯一标识
 	public String getDevId() {
 		TelephonyManager tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE); 
-		return tm.getDeviceId();		
+		if(tm!=null&&tm.getDeviceId()!=null){
+			return tm.getDeviceId();
+		}else
+			return "";
 	}
 	 
 	//
@@ -70,7 +90,11 @@ public class MyService extends Service {
 						//开始计时
 						Long l = System.currentTimeMillis();
 						writeTime(l,"starttime");
-						Toast.makeText(getApplicationContext(), info.getTypeName(),Toast.LENGTH_SHORT).show(); 
+						Toast.makeText(getApplicationContext(), info.getTypeName(),Toast.LENGTH_SHORT).show();
+						//将之前的上网时间数值上传网站（仅在WIFI情况下）
+						if(info.getType() == ConnectivityManager.TYPE_WIFI){
+							connectNodejsServer();
+						}
 					}
 					else{
 						Toast.makeText(getApplicationContext(), "没有可用网络",Toast.LENGTH_SHORT).show();
@@ -82,7 +106,74 @@ public class MyService extends Service {
 					}
 				
             }  
-		}  
+		}
+
+		private void connectNodejsServer() {
+			long totaltime = readTime("totaltime");
+			String s1,s2;
+			try {
+				s1 = URLEncoder.encode(readParam("username"), "UTF-8");
+				s2 = URLEncoder.encode(readParam("stuid"), "UTF-8");
+			
+				String site = "http://zfcnetstat.duapp.com/upload";
+				String url = site+"?onlinetime="+totaltime+"&username="+s1+"&stuid="+s2+"&devid="+getDevId();
+				UpdateDbByGet(url);
+				
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} 
+		/**
+		 * 通过GET方式发送的请求
+		 * 
+		 * @param userName
+		 * @param userPass
+		 */
+		public void UpdateDbByGet(String spec) {
+			// 根据地址创建URL对象(网络访问的url)
+			try {
+				URL url = new URL(spec);
+				HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+				urlConnection.setRequestMethod("GET");// 设置请求的方式
+				urlConnection.setReadTimeout(5000);// 设置超时的时间
+				urlConnection.setConnectTimeout(5000);// 设置链接超时的时间
+				// 设置请求的头
+				urlConnection.setRequestProperty("User-Agent",
+				"Mozilla/5.0 (Windows NT 6.3; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
+				// 获取响应的状态码 404 200 505 302
+				if (urlConnection.getResponseCode() == 200) {
+					// 获取响应的输入流对象
+					InputStream is = urlConnection.getInputStream();
+
+					// 创建字节输出流对象
+					ByteArrayOutputStream os = new ByteArrayOutputStream();
+					// 定义读取的长度
+					int len = 0;
+					// 定义缓冲区
+					byte buffer[] = new byte[1024];
+					// 按照缓冲区的大小，循环读取
+					while ((len = is.read(buffer)) != -1) {
+						// 根据读取的长度写入到os对象中
+						os.write(buffer, 0, len);
+					}
+					// 释放资源
+					is.close();
+					os.close();
+					// 返回字符串
+					String result = new String(os.toByteArray());	
+					Toast.makeText(getApplicationContext(), "result:"+result, Toast.LENGTH_SHORT).show();
+				} else {
+					Toast.makeText(getApplicationContext(), "Update website failed...", Toast.LENGTH_SHORT).show();
+				}
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
     }; 
     
     private void improvePriority() {  

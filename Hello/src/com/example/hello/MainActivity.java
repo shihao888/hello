@@ -10,17 +10,19 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements OnClickListener{
 	Button buttonStart, buttonStop; 	 
-  
+	EditText et_username,et_stuid;
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		// TODO Auto-generated method stub
@@ -36,6 +38,10 @@ public class MainActivity extends Activity implements OnClickListener{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
+		// 通过 findViewById(id)方法获取用户姓名的控件对象  
+        et_username = (EditText) findViewById(R.id.et_username);  
+        // 通过 findViewById(id)方法获取用户学号的控件对象  
+        et_stuid = (EditText) findViewById(R.id.et_stuid); 
 				
 		//开启
 		buttonStart = (Button) findViewById(R.id.buttonstart);  
@@ -53,6 +59,19 @@ public class MainActivity extends Activity implements OnClickListener{
 				
 		switch (src.getId()) {
 		case R.id.buttonstart:
+			// 获取用户姓名  
+            final String stuName = et_username.getText().toString();  
+            // 获取用户学号
+            final String stuId = et_stuid.getText().toString(); 
+            
+            if (TextUtils.isEmpty(stuName) || TextUtils.isEmpty(stuId)) {  
+                Toast.makeText(this, "姓名或者学号不能为空,调查服务没有启动！", Toast.LENGTH_LONG).show();
+                return;
+            }else{
+            	 writeParam("username",stuName);
+            	 writeParam("stuid",stuId);
+            }
+            
 			if (!isServiceStarted) {			
 				Intent intent = new Intent(this, MyService.class);		     
 			    if (startService(intent) == null) {
@@ -60,6 +79,7 @@ public class MainActivity extends Activity implements OnClickListener{
 			    	return;
 			    }
 			    isServiceStarted = true;
+			    //
 			}else{
 				Toast.makeText(getApplicationContext(), "服务已启动！" ,Toast.LENGTH_SHORT).show();
 				return;
@@ -153,5 +173,14 @@ public class MainActivity extends Activity implements OnClickListener{
 		editor.putString(sName,Long.toString(time));
 		editor.commit();
 		
+	}
+	//写参数：写入姓名、学号等信息
+	public void writeParam(String key, String value) {
+
+		SharedPreferences item = getSharedPreferences(key, 0);
+		SharedPreferences.Editor editor = item.edit();
+		editor.putString(key, value);
+		editor.commit();
+
 	}
 }

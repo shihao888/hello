@@ -8,5 +8,6 @@
     <string name="action_cleartotal">上网时长清零</string>
     <string name="buttonstart_text">同意参与调查并开始</string>
     <string name="buttonstop_text">停止调查</string>
+    <string name="StartServiceActivityStr">启动服务</string>
 
 </resources>
