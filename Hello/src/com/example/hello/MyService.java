@@ -66,11 +66,16 @@ public class MyService extends Service {
 	}
 	//得到手机唯一标识
 	public String getDevId() {
-		TelephonyManager tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE); 
-		if(tm!=null&&tm.getDeviceId()!=null){
-			return tm.getDeviceId();
-		}else
-			return "";
+		try { 
+			TelephonyManager tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);  
+			if(tm!=null&&tm.getDeviceId()!=null){
+				return tm.getDeviceId();
+			}else
+				return "N/A";
+	    } catch (Exception e) { 
+	    	return "N/A";
+	    } 
+		
 	}
 	 
 	//
@@ -104,7 +109,7 @@ public class MyService extends Service {
 						writeTime(totaltime,"totaltime"); //记录总时间
 						writeTime(stoptime,"starttime");//记录结束时间到开始位置						
 					}
-				
+					connectNodejsServer();
             }  
 		}
 
