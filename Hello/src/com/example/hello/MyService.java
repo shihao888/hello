@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -20,12 +21,14 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.os.StrictMode;
 import android.telephony.TelephonyManager;
 import android.widget.Toast;
 
@@ -77,7 +80,20 @@ public class MyService extends Service {
 	    } 
 		
 	}
-	 
+	//http://blog.csdn.net/wuleihenbang/article/details/17126371
+	static public class MyHandler extends Handler {
+			String ResultStr;
+	        @Override
+	        public void handleMessage(Message msg) {
+	            super.handleMessage(msg);
+	            Bundle data = msg.getData();
+	            String val = data.getString("MyValue");
+	            ResultStr="请求结果:" + val;
+	        }
+	        public String getResultStr(){
+				return ResultStr;	        	
+	        }
+	};
 	//
 	private BroadcastReceiver mReceiver = new BroadcastReceiver()  
     {  
@@ -112,7 +128,7 @@ public class MyService extends Service {
 					
             }  
 		}
-
+		
 		private void connectNodejsServer() {
 			long totaltime = readTime("totaltime");
 			String s1,s2;
@@ -122,65 +138,20 @@ public class MyService extends Service {
 			
 				String site = "http://zfcnetstat.duapp.com/upload";
 				String url = site+"?onlinetime="+totaltime+"&username="+s1+"&stuid="+s2+"&devid="+getDevId();
-				UpdateDbByGet(url);
+				
+				//启动线程更新网站端数据库
+				HttpGetThread httpThread = new HttpGetThread(url,new MyService.MyHandler());
+				new Thread(httpThread).start();
+				showMessage(httpThread.getResultStr());				
 				
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} 
-		/**
-		 * 通过GET方式发送的请求
-		 * 
-		 * @param userName
-		 * @param userPass
-		 */
-		public void UpdateDbByGet(String spec) {
-			// 根据地址创建URL对象(网络访问的url)
-			try {
-				URL url = new URL(spec);
-				HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-				urlConnection.setRequestMethod("GET");// 设置请求的方式
-				urlConnection.setReadTimeout(5000);// 设置超时的时间
-				urlConnection.setConnectTimeout(5000);// 设置链接超时的时间
-				// 设置请求的头
-				urlConnection.setRequestProperty("User-Agent",
-				"Mozilla/5.0 (Windows NT 6.3; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
-				// 获取响应的状态码 404 200 505 302
-				if (urlConnection.getResponseCode() == 200) {
-					// 获取响应的输入流对象
-					InputStream is = urlConnection.getInputStream();
-
-					// 创建字节输出流对象
-					ByteArrayOutputStream os = new ByteArrayOutputStream();
-					// 定义读取的长度
-					int len = 0;
-					// 定义缓冲区
-					byte buffer[] = new byte[1024];
-					// 按照缓冲区的大小，循环读取
-					while ((len = is.read(buffer)) != -1) {
-						// 根据读取的长度写入到os对象中
-						os.write(buffer, 0, len);
-					}
-					// 释放资源
-					is.close();
-					os.close();
-					// 返回字符串
-					String result = new String(os.toByteArray());	
-					Toast.makeText(getApplicationContext(), "result:"+result, Toast.LENGTH_SHORT).show();
-				} else {
-					Toast.makeText(getApplicationContext(), "Update website failed...", Toast.LENGTH_SHORT).show();
-				}
-			} catch (MalformedURLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-    }; 
+    };
     
+   
     private void improvePriority() {  
 	    PendingIntent contentIntent = PendingIntent.getActivity(this, 0,  
 	            new Intent(this, MyService.class), 0);  
@@ -217,5 +188,7 @@ public class MyService extends Service {
 		Toast.makeText(getApplicationContext(), "Service is starting...", Toast.LENGTH_SHORT).show();
 	    return START_STICKY;
 	}
-	
+	public void showMessage(String s){
+		Toast.makeText(getApplicationContext(), s, Toast.LENGTH_LONG).show();
+	}
 }
