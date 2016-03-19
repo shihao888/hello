@@ -36,37 +36,15 @@ public class MyService extends Service {
 		
 	private ConnectivityManager connectivityManager;  
     private NetworkInfo info;     
- 
+    private SharedPreferences sharedPreference;
 	
 	@Override
 	public IBinder onBind(Intent arg0) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	//读写配置文件
-	public void writeTime(long time,String sName){
-		
-		SharedPreferences item = getSharedPreferences(sName,0);
-		SharedPreferences.Editor editor = item.edit();
-		editor.putString(sName,Long.toString(time));
-		editor.commit();
-		
-	}
-	public long readTime(String sName){
-		
-		SharedPreferences item = getSharedPreferences(sName,0);
-		String tmp = item.getString(sName,"0");
-		if(tmp==null)return 0l;
-		else return Long.parseLong(tmp);
-	}
-	//读参数：读取姓名、学号等信息
-	public String readParam(String sName){
-		
-		SharedPreferences item = getSharedPreferences(sName,0);
-		String tmp = item.getString(sName,"N/A");
-		if(tmp==null)return "N/A";
-		else return tmp;
-	}
+	
+	
 	//得到手机唯一标识
 	public String getDevId() {
 		try { 
@@ -97,20 +75,21 @@ public class MyService extends Service {
 	//
 	private BroadcastReceiver mReceiver = new BroadcastReceiver()  
     {  
-       
+		
+		ProfileUtil profile = new ProfileUtil(sharedPreference);
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			// TODO Auto-generated method stub
 			String action = intent.getAction();  
             if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION))  
-            {  
+            {              	
 				connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 				info = connectivityManager.getActiveNetworkInfo(); 
 				
 					if(info != null && info.isAvailable() && (info.getState() == NetworkInfo.State.CONNECTED)){						
 						//开始计时
 						Long l = System.currentTimeMillis();
-						writeTime(l,"starttime");
+						profile.writeTime(l,"starttime");
 						Toast.makeText(getApplicationContext(), info.getTypeName(),Toast.LENGTH_SHORT).show();
 						//将之前的上网时间数值上传网站（仅在WIFI情况下）
 						if(info.getType() == ConnectivityManager.TYPE_WIFI){
@@ -121,20 +100,20 @@ public class MyService extends Service {
 						Toast.makeText(getApplicationContext(), "没有可用网络",Toast.LENGTH_SHORT).show();
 						//停止计时
 						long stoptime = System.currentTimeMillis();						
-						long totaltime = readTime("totaltime")+stoptime-readTime("starttime"); 
-						writeTime(totaltime,"totaltime"); //记录总时间
-						writeTime(stoptime,"starttime");//记录结束时间到开始位置						
+						long totaltime = profile.readTime("totaltime")+stoptime-profile.readTime("starttime"); 
+						profile.writeTime(totaltime,"totaltime"); //记录总时间
+						profile.writeTime(stoptime,"starttime");//记录结束时间到开始位置						
 					}
 					
             }  
 		}
 		
 		private void connectNodejsServer() {
-			long totaltime = readTime("totaltime");
+			long totaltime = profile.readTime("totaltime");
 			String s1,s2;
 			try {
-				s1 = URLEncoder.encode(readParam("username"), "UTF-8");
-				s2 = URLEncoder.encode(readParam("stuid"), "UTF-8");
+				s1 = URLEncoder.encode(profile.readParam("username"), "UTF-8");
+				s2 = URLEncoder.encode(profile.readParam("stuid"), "UTF-8");
 			
 				String site = "http://zfcnetstat.duapp.com/upload";
 				String url = site+"?onlinetime="+totaltime+"&username="+s1+"&stuid="+s2+"&devid="+getDevId();
@@ -165,7 +144,8 @@ public class MyService extends Service {
 	@Override
 	public void onCreate() {
 		improvePriority();
-		
+		//
+		sharedPreference=this.getSharedPreferences(this.getString(R.string.config_filename), MODE_PRIVATE);
 		//注册广播  
         IntentFilter mFilter = new IntentFilter();  
         mFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION); // 添加接收网络连接状态改变的Action  

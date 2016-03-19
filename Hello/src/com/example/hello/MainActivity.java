@@ -18,11 +18,16 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements OnClickListener{
 	Button buttonStart, buttonStop; 	 
 	EditText et_username,et_stuid;
+	TextView tv_userid;
+	String userid;
+	private SharedPreferences sharedPreference;
+	private ProfileUtil profile;
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		// TODO Auto-generated method stub
@@ -38,6 +43,16 @@ public class MainActivity extends Activity implements OnClickListener{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
+		//得到唯一userid
+		sharedPreference=this.getSharedPreferences(this.getString(R.string.config_filename), MODE_PRIVATE);
+		profile = new ProfileUtil(sharedPreference);
+		userid=profile.readParam("userid");
+		if(null==userid||"N/A".equals(userid)){
+			userid = ProfileUtil.getUUID();
+			profile.writeParam("userid", userid);
+        }		
+		tv_userid = (TextView) findViewById(R.id.userid);
+		tv_userid.setText(userid);
 		// 通过 findViewById(id)方法获取用户姓名的控件对象  
         et_username = (EditText) findViewById(R.id.et_username);  
         // 通过 findViewById(id)方法获取用户学号的控件对象  
@@ -68,8 +83,8 @@ public class MainActivity extends Activity implements OnClickListener{
                 Toast.makeText(this, "姓名或者学号不能为空,调查服务没有启动！", Toast.LENGTH_LONG).show();
                 return;
             }else{
-            	 writeParam("username",stuName);
-            	 writeParam("stuid",stuId);
+            	profile.writeParam("username",stuName);
+            	profile.writeParam("stuid",stuId);
             }
             
 			if (!isServiceStarted) {			
@@ -123,7 +138,10 @@ public class MainActivity extends Activity implements OnClickListener{
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
-			Toast.makeText(getApplicationContext(), "版本version 5", Toast.LENGTH_SHORT).show();
+			String s="版本version 5 \n"+"用户id:"+profile.readParam("userid");
+			AlertDialog.Builder builder=new AlertDialog.Builder(this);  //先得到构造器 
+			builder.setMessage(s);
+			builder.create().show();			
 			return true;
 		}
 		if (id == R.id.chkmyservice) {
@@ -131,9 +149,9 @@ public class MainActivity extends Activity implements OnClickListener{
 			if(isServiceRunning("com.example.hello.MyService"))s="后台服务正在运行......";
 			else s="后台服务已经停止!!!";
 			Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
-			Long total = readTime("totaltime");
-			Long start = readTime("starttime");
-			Long stop = readTime("stoptime");
+			Long total = profile.readTime("totaltime");
+			Long start = profile.readTime("starttime");
+			Long stop = profile.readTime("stoptime");
 			SimpleDateFormat formatter = new SimpleDateFormat("yyyy年-MM月dd日-HH时mm分ss秒");
 			Date date1 = new Date(start);Date date2 = new Date(stop);
 			String sTotal = formatDuring(total);
@@ -147,7 +165,7 @@ public class MainActivity extends Activity implements OnClickListener{
 			return true;
 		}
 		if (id == R.id.cleartotal) {
-			writeTime(0,"totaltime");
+			profile.writeTime(0,"totaltime");
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -159,28 +177,6 @@ public class MainActivity extends Activity implements OnClickListener{
 	    return days + " days " + hours + " hours " + minutes + " minutes "  
 	            + seconds + " seconds ";  
 	} 
-	public long readTime(String sName){
-		
-		SharedPreferences item = getSharedPreferences(sName,0);
-		String tmp = item.getString(sName,"0");
-		if(tmp==null)return 0l;
-		else return Long.parseLong(tmp);
-	}
-	public void writeTime(long time,String sName){
-		
-		SharedPreferences item = getSharedPreferences(sName,0);
-		SharedPreferences.Editor editor = item.edit();
-		editor.putString(sName,Long.toString(time));
-		editor.commit();
-		
-	}
-	//写参数：写入姓名、学号等信息
-	public void writeParam(String key, String value) {
-
-		SharedPreferences item = getSharedPreferences(key, 0);
-		SharedPreferences.Editor editor = item.edit();
-		editor.putString(key, value);
-		editor.commit();
-
-	}
+	
+	
 }
