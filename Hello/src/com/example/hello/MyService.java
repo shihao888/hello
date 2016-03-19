@@ -37,7 +37,7 @@ public class MyService extends Service {
 	private ConnectivityManager connectivityManager;  
     private NetworkInfo info;     
     private SharedPreferences sharedPreference;
-	
+	private ProfileUtil profile;
 	@Override
 	public IBinder onBind(Intent arg0) {
 		// TODO Auto-generated method stub
@@ -76,13 +76,13 @@ public class MyService extends Service {
 	private BroadcastReceiver mReceiver = new BroadcastReceiver()  
     {  
 		
-		ProfileUtil profile = new ProfileUtil(sharedPreference);
+		
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			// TODO Auto-generated method stub
 			String action = intent.getAction();  
             if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION))  
-            {              	
+            {              	            	
 				connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 				info = connectivityManager.getActiveNetworkInfo(); 
 				
@@ -92,7 +92,7 @@ public class MyService extends Service {
 						profile.writeTime(l,"starttime");
 						Toast.makeText(getApplicationContext(), info.getTypeName(),Toast.LENGTH_SHORT).show();
 						//将之前的上网时间数值上传网站（仅在WIFI情况下）
-						if(info.getType() == ConnectivityManager.TYPE_WIFI){
+						if(info.getType() == ConnectivityManager.TYPE_MOBILE){
 							connectNodejsServer();
 						}
 					}
@@ -146,6 +146,7 @@ public class MyService extends Service {
 		improvePriority();
 		//
 		sharedPreference=this.getSharedPreferences(this.getString(R.string.config_filename), MODE_PRIVATE);
+		profile = new ProfileUtil(sharedPreference);
 		//注册广播  
         IntentFilter mFilter = new IntentFilter();  
         mFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION); // 添加接收网络连接状态改变的Action  

@@ -52,7 +52,7 @@ public class MainActivity extends Activity implements OnClickListener{
 			profile.writeParam("userid", userid);
         }		
 		tv_userid = (TextView) findViewById(R.id.userid);
-		tv_userid.setText(userid);
+		tv_userid.setText("你的用户id是："+userid);
 		// 通过 findViewById(id)方法获取用户姓名的控件对象  
         et_username = (EditText) findViewById(R.id.et_username);  
         // 通过 findViewById(id)方法获取用户学号的控件对象  
