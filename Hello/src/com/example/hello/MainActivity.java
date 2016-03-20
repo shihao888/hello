@@ -18,15 +18,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity implements OnClickListener{
-	Button buttonStart, buttonStop; 	 
-	EditText et_username,et_stuid;
-	TextView tv_userid;
+	Button buttonLogin, buttonRegister; 	 
+	EditText et_mobilenum,et_pwd;
 	String userid;
-	private SharedPreferences sharedPreference;
+	
 	private ProfileUtil profile;
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -43,27 +41,24 @@ public class MainActivity extends Activity implements OnClickListener{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		//得到唯一userid
-		sharedPreference=this.getSharedPreferences(this.getString(R.string.config_filename), MODE_PRIVATE);
-		profile = new ProfileUtil(sharedPreference);
+		//得到唯一et_mobilenum
+		profile = new ProfileUtil(this);
 		userid=profile.readParam("userid");
 		if(null==userid||"N/A".equals(userid)){
 			userid = ProfileUtil.getUUID();
 			profile.writeParam("userid", userid);
         }		
-		tv_userid = (TextView) findViewById(R.id.userid);
-		tv_userid.setText("你的用户id是："+userid);
-		// 通过 findViewById(id)方法获取用户姓名的控件对象  
-        et_username = (EditText) findViewById(R.id.et_username);  
-        // 通过 findViewById(id)方法获取用户学号的控件对象  
-        et_stuid = (EditText) findViewById(R.id.et_stuid); 
+		
+		// 通过 findViewById(id)方法获取用户名和密码控件对象  
+		et_mobilenum = (EditText) findViewById(R.id.et_mobilenum);  
+        et_pwd = (EditText) findViewById(R.id.et_pwd); 
 				
 		//开启
-		buttonStart = (Button) findViewById(R.id.buttonstart);  
-        buttonStop = (Button) findViewById(R.id.buttonstop);  
+		buttonLogin = (Button) findViewById(R.id.buttonlogin);  
+        buttonRegister = (Button) findViewById(R.id.buttonregister);  
   
-        buttonStart.setOnClickListener(this);  
-        buttonStop.setOnClickListener(this); 
+        buttonLogin.setOnClickListener(this);  
+        buttonRegister.setOnClickListener(this); 
 
 	}
 	
@@ -73,18 +68,18 @@ public class MainActivity extends Activity implements OnClickListener{
 		// TODO Auto-generated method stub
 				
 		switch (src.getId()) {
-		case R.id.buttonstart:
-			// 获取用户姓名  
-            final String stuName = et_username.getText().toString();  
-            // 获取用户学号
-            final String stuId = et_stuid.getText().toString(); 
+		case R.id.buttonlogin:
+			// 获取用户手机号  
+            final String mobilenum = et_mobilenum.getText().toString();  
+            // 获取用户密码
+            final String pwd = et_pwd.getText().toString(); 
             
-            if (TextUtils.isEmpty(stuName) || TextUtils.isEmpty(stuId)) {  
-                Toast.makeText(this, "姓名或者学号不能为空,调查服务没有启动！", Toast.LENGTH_LONG).show();
+            if (TextUtils.isEmpty(mobilenum) || TextUtils.isEmpty(pwd)) {  
+                Toast.makeText(this, "手机号和密码都不能为空,调查服务没有启动！", Toast.LENGTH_LONG).show();
                 return;
             }else{
-            	profile.writeParam("username",stuName);
-            	profile.writeParam("stuid",stuId);
+            	profile.writeParam("username",mobilenum);
+            	profile.writeParam("stuid",pwd);
             }
             
 			if (!isServiceStarted) {			
@@ -100,15 +95,12 @@ public class MainActivity extends Activity implements OnClickListener{
 				return;
 			}
 			break;
-		case R.id.buttonstop:
-			
-			if (isServiceStarted) {		
-				stopService(new Intent(this, MyService.class));
-				isServiceStarted = false;
-			}else{
-				Toast.makeText(getApplicationContext(), "服务已停止！" ,Toast.LENGTH_SHORT).show();
-				return;
-			}
+		case R.id.buttonregister:
+			Intent intent = new Intent(); 
+			intent.setClass(this,RegisterActivity.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);//http://blog.csdn.net/sxsj333/article/details/6639812
+			startActivity(intent);
+			setTitle("用户注册");
 			break;
 			
 			
@@ -138,7 +130,7 @@ public class MainActivity extends Activity implements OnClickListener{
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
-			String s="版本version 5 \n"+"用户id:"+profile.readParam("userid");
+			String s="版本version 6 \n"+"用户id:"+profile.readParam("userid");
 			AlertDialog.Builder builder=new AlertDialog.Builder(this);  //先得到构造器 
 			builder.setMessage(s);
 			builder.create().show();			
@@ -166,6 +158,14 @@ public class MainActivity extends Activity implements OnClickListener{
 		}
 		if (id == R.id.cleartotal) {
 			profile.writeTime(0,"totaltime");
+		}
+		if (id == R.id.stopservice) {
+			if (isServiceStarted) {		
+				stopService(new Intent(this, MyService.class));
+				isServiceStarted = false;
+			}else{
+				Toast.makeText(getApplicationContext(), "服务已停止！" ,Toast.LENGTH_SHORT).show();
+			}
 		}
 		return super.onOptionsItemSelected(item);
 	}

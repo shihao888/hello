@@ -7,7 +7,9 @@
     <string name="action_chkmyservice">查看后台服务是否运行</string>
     <string name="action_cleartotal">上网时长清零</string>
     <string name="buttonstart_text">同意参与调查并开始</string>
-    <string name="buttonstop_text">停止调查</string>
     <string name="StartServiceActivityStr">启动服务</string>
 	<string name="config_filename">spconfig</string>
+	<string name="buttonlogin">手机号登录</string>
+	<string name="buttonregister">注册新用户</string>
+	<string name="stopservice">停止服务</string>
 </resources>

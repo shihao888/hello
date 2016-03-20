@@ -29,10 +29,4 @@ public class HttpGetThread implements Runnable {
         handler.sendMessage(msg);
 	}
 
-	public String getResultStr() {
-		return resultStr;
-	}
-
-	
-
 }

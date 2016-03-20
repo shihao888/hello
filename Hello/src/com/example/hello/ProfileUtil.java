@@ -1,16 +1,41 @@
 package com.example.hello;
+
 import android.app.Activity;
+import android.app.Service;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.widget.Toast;
+
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import android.content.SharedPreferences;
-
 public class ProfileUtil {
+	public static final String mywebsite = "http://zfcnetstat.duapp.com";
 	private SharedPreferences sp;
-	public ProfileUtil(SharedPreferences sharedPreference) {
-		sp = sharedPreference;
+	private Activity myact;
+	private Service mysrv;
+	private Context myctx;
+	public ProfileUtil(Service srv) {
+		mysrv = srv;
+		sp=mysrv.getSharedPreferences(mysrv.getString(R.string.config_filename), Context.MODE_PRIVATE);
+	}
+	public ProfileUtil(Activity act) {
+		myact = act;
+		sp=act.getSharedPreferences(act.getString(R.string.config_filename), Context.MODE_PRIVATE);
+	}
+	public ProfileUtil(Context ctx) {
+		myctx = ctx;
+		sp=ctx.getSharedPreferences(ctx.getString(R.string.config_filename), Context.MODE_PRIVATE);
 	}
 	//自己编写的方法
 	/*
@@ -81,4 +106,74 @@ public class ProfileUtil {
 		else
 			return Long.parseLong(tmp);
 	}
+	//md5加密
+	public String getMD5(String info)
+	{
+	  try
+	  {
+	    MessageDigest md5 = MessageDigest.getInstance("MD5");
+	    md5.update(info.getBytes("UTF-8"));
+	    byte[] encryption = md5.digest();
+	      
+	    StringBuffer strBuf = new StringBuffer();
+	    for (int i = 0; i < encryption.length; i++)
+	    {
+	      if (Integer.toHexString(0xff & encryption[i]).length() == 1)
+	      {
+	        strBuf.append("0").append(Integer.toHexString(0xff & encryption[i]));
+	      }
+	      else
+	      {
+	        strBuf.append(Integer.toHexString(0xff & encryption[i]));
+	      }
+	    }
+	      
+	    return strBuf.toString();
+	  }
+	  catch (NoSuchAlgorithmException e)
+	  {
+	    return "";
+	  }
+	  catch (UnsupportedEncodingException e)
+	  {
+	    return "";
+	  }
+	}
+	/**
+     * 检查当前网络是否可用
+     * 
+     * @param context
+     * @return
+     */
+    
+    public boolean isNetworkAvailable()
+    {
+        Context context = myact.getApplicationContext();
+        // 获取手机所有连接管理对象（包括对wi-fi,net等连接的管理）
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        
+        if (connectivityManager == null)
+        {
+            return false;
+        }
+        else
+        {
+            // 获取NetworkInfo对象
+            NetworkInfo info = connectivityManager.getActiveNetworkInfo();
+            
+            if(info != null && info.isAvailable() && (info.getState() == NetworkInfo.State.CONNECTED)){						
+				return true;
+			}
+			
+        }
+        return false;
+    }
+    public void showMessage(String s){
+    	if(myact!=null)
+    		Toast.makeText(myact.getApplicationContext(), s, Toast.LENGTH_LONG).show();
+    	else if(mysrv!=null)
+    		Toast.makeText(mysrv.getApplicationContext(), s, Toast.LENGTH_LONG).show();
+    		
+	}
+  
 }
