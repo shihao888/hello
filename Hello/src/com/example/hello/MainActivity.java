@@ -1,8 +1,10 @@
 package com.example.hello;
 
+import java.io.UnsupportedEncodingException;
+import java.lang.ref.WeakReference;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
@@ -10,6 +12,8 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -41,13 +45,10 @@ public class MainActivity extends Activity implements OnClickListener{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		//得到唯一et_mobilenum
+		
 		profile = new ProfileUtil(this);
 		userid=profile.readParam("userid");
-		if(null==userid||"N/A".equals(userid)){
-			userid = ProfileUtil.getUUID();
-			profile.writeParam("userid", userid);
-        }		
+				
 		
 		// 通过 findViewById(id)方法获取用户名和密码控件对象  
 		et_mobilenum = (EditText) findViewById(R.id.et_mobilenum);  
@@ -78,6 +79,7 @@ public class MainActivity extends Activity implements OnClickListener{
                 Toast.makeText(this, "手机号和密码都不能为空,调查服务没有启动！", Toast.LENGTH_LONG).show();
                 return;
             }else{
+            	login(mobilenum,pwd);
             	profile.writeParam("username",mobilenum);
             	profile.writeParam("stuid",pwd);
             }
@@ -106,6 +108,51 @@ public class MainActivity extends Activity implements OnClickListener{
 			
 		}
 	}
+	private void login(String mobilenum, String pwd) {
+		String[] s = new String[2];		
+		try {
+			s[0] = URLEncoder.encode(mobilenum, "UTF-8");
+			s[1] = URLEncoder.encode(profile.getMD5(pwd), "UTF-8");			
+				
+			String site = ProfileUtil.mywebsite+"/login";
+			String url = site + "?mobilenum=" + s[0] + "&pwd=" + s[1];
+
+			// 启动线程更新网站端数据库
+			Handler h = new MyHandler(this);
+			HttpGetThread httpThread = new HttpGetThread(url, h);
+			new Thread(httpThread).start();
+			
+			
+
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	private static class MyHandler extends Handler {  
+        private final MainActivity mActivity;  
+  
+        public MyHandler(MainActivity activity) {  
+            mActivity = new WeakReference<MainActivity>(activity).get();  
+        }  
+        
+        @Override  
+        public void handleMessage(Message msg) {  
+        	super.handleMessage(msg);
+			Bundle data = msg.getData();
+			String val = data.getString("MyValue");//请求结果
+			Toast.makeText(mActivity.getApplicationContext(), val, Toast.LENGTH_LONG).show();
+			//如果登录成功
+			if(val.equals("OK")){
+			Intent intent = new Intent(); 
+			intent.setClass(mActivity,MembershipActivity.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);//http://blog.csdn.net/sxsj333/article/details/6639812
+			mActivity.startActivity(intent);
+			mActivity.setTitle("成员用户");
+			}
+        }  
+    }  
 	private boolean isServiceRunning(String serviceName) {//"com.example.MyService"
 	    ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 	    for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {

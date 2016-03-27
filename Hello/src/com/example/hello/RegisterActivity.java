@@ -5,14 +5,10 @@ import java.lang.ref.WeakReference;
 import java.net.URLEncoder;
 
 import android.app.Activity;
-import android.app.Service;
-import android.content.Context;
-import android.content.ContextWrapper;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
+
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Handler.Callback;
+
 import android.os.Message;
 import android.text.TextUtils;
 import android.view.View;
