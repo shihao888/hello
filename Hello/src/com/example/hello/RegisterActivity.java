@@ -19,9 +19,16 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 public class RegisterActivity extends Activity implements OnClickListener{
+	//验证码
+	ImageView vc_image; // 图标
+	Button vc_shuaxin, vc_ok; // 确定和刷新验证码
+	String getCode = null; // 获取验证码的值
+	EditText vc_code; // 文本框的值
+	//
 	Button buttonOK, buttonCancel; 
 	private ProfileUtil profile;
 	String mobilenum,pwd1,pwd2,realname,stuid;
@@ -38,12 +45,36 @@ public class RegisterActivity extends Activity implements OnClickListener{
   
         buttonOK.setOnClickListener(this);  
         buttonCancel.setOnClickListener(this); 
+        
+        //生成验证码
+        vc_image=(ImageView)findViewById(R.id.vc_image);
+        vc_image.setImageBitmap(Code.getInstance().getBitmap());
+        vc_code=(EditText) findViewById(R.id.vc_code);
+        
+        getCode=Code.getInstance().getCode(); //获取显示的验证码
+        vc_shuaxin=(Button)findViewById(R.id.vc_shuaxin);
+        vc_shuaxin.setOnClickListener(this);
 	}
 
 	@Override
 	public void onClick(View src) {
 		switch (src.getId()) {
+		case R.id.vc_shuaxin:
+			//刷新验证码
+			vc_image.setImageBitmap(Code.getInstance().getBitmap());
+			getCode = Code.getInstance().getCode();
+			return;
 		case R.id.registerOK:
+			//判断验证码是否正确
+			String v_code = vc_code.getText().toString().trim();
+			if (v_code == null || v_code.equals("")) {
+				Toast.makeText(RegisterActivity.this, "没有填写验证码", Toast.LENGTH_LONG).show();
+				return;
+			} else if (!v_code.equals(getCode)) {
+				Toast.makeText(RegisterActivity.this, "验证码填写不正确", Toast.LENGTH_LONG).show();
+				return;
+			} 
+				
 			// 获取用户手机号 
             mobilenum = ((EditText)findViewById(R.id.reg_mobilenum)).getText().toString();  
             // 获取用户密码
